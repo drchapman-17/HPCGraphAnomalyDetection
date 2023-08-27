@@ -7,7 +7,7 @@ from timeit import default_timer
 import numpy as np
 import torch
 from torch import nn
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 logger = logging.getLogger("GNN_trainer")
 
