@@ -4,7 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 import torch
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 DROP_TH = 100
 KEEPNODES = None 
