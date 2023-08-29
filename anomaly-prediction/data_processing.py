@@ -117,3 +117,19 @@ def build_heatmap(edges):
     np.add.at(heatmap, (edges[:, 0], edges[:, 1]), 1)
     return heatmap
 
+def compute_labels(data,window_size):
+    labels = []
+    for i in tqdm(range(len(data))):
+        if i+window_size<len(data):
+            anomalies = np.stack(data['anomalies'].iloc[i:i+window_size].values)
+            labels.append(anomalies.any(axis=0).astype(int))
+        else: # Put them to zero when the number of samples is less than the window size, no relevant data come from here
+            labels.append(np.zeros(data['anomalies'][0].shape))
+    return torch.tensor(labels)
+
+def train_test_split(data,train_split):
+  train_size = int(len(data)*train_split)
+  train_data = data[:train_size]
+  test_data = data[train_size:]
+
+  return train_data, test_data
