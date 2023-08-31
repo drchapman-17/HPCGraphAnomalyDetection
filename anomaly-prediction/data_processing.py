@@ -79,7 +79,7 @@ def add_window_labels(data,window_size):
     labels = []
     for i in tqdm(range(len(data))):
       anomalies = np.stack(data['anomalies'].iloc[i:i+window_size+1].values)
-      labels.append(anomalies.any(axis=0).astype(int))
+      labels.append(anomalies.any(axis=0).astype(float))
     data['labels'] = labels
     return data
 
@@ -120,7 +120,7 @@ def compute_labels(data,window_size):
     labels = []
     for i in tqdm(range(len(data))):
       anomalies = np.stack(data['anomalies'].iloc[i:i+window_size+1].values)
-      labels.append(anomalies.any(axis=0).astype(int))
+      labels.append(anomalies.any(axis=0).astype(float))
     return torch.tensor(labels)
 
 def train_test_split(data,train_split):
