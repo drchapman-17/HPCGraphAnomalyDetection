@@ -25,10 +25,12 @@ class MinMaxScaler():
         return x_std * (self.range_max-self.range_min) + self.range_min
     
 
-def load_metrics(datapath):
+def load_metrics(datapath,racks=None):
+    if racks is None:
+      racks = list(range(49)) 
     # Read all dataframes
     df_list = []
-    for i in tqdm(range(49)):
+    for i in tqdm(racks):
         df_list.append(pd.read_parquet(os.path.join(datapath,f'rack_{i}.parquet')).rename(columns={'values':f'values_{i}'}))
 
     # Aggregate all dataframes into a single one
@@ -37,7 +39,7 @@ def load_metrics(datapath):
         data = pd.merge(data,df,how='outer',on='timestamp')
 
     # Aggregate values
-    values_columns = [f'values_{i}' for i in range(49)]
+    values_columns = [f'values_{i}' for i in racks]
     data['values']= data[values_columns].agg(np.concatenate,axis=1)
     data = data.drop(values_columns,axis=1)
 
@@ -76,11 +78,8 @@ def add_window_labels(data,window_size):
     # Apply a sliding window to compute for each node if it raised an anomaly within the window 
     labels = []
     for i in tqdm(range(len(data))):
-        if i+window_size<len(data):
-            anomalies = np.stack(data['anomalies'].iloc[i:i+window_size].values)   
-            labels.append(anomalies.any(axis=0).astype(int))
-        else: # Put them to zero when the number of samples is less than the window size, no relevant data come from here
-            labels.append(np.zeros(data['anomalies'][0].shape))
+      anomalies = np.stack(data['anomalies'].iloc[i:i+window_size+1].values)
+      labels.append(anomalies.any(axis=0).astype(int))
     data['labels'] = labels
     return data
 
@@ -120,11 +119,8 @@ def build_heatmap(edges):
 def compute_labels(data,window_size):
     labels = []
     for i in tqdm(range(len(data))):
-        if i+window_size<len(data):
-            anomalies = np.stack(data['anomalies'].iloc[i:i+window_size].values)
-            labels.append(anomalies.any(axis=0).astype(int))
-        else: # Put them to zero when the number of samples is less than the window size, no relevant data come from here
-            labels.append(np.zeros(data['anomalies'][0].shape))
+      anomalies = np.stack(data['anomalies'].iloc[i:i+window_size+1].values)
+      labels.append(anomalies.any(axis=0).astype(int))
     return torch.tensor(labels)
 
 def train_test_split(data,train_split):
