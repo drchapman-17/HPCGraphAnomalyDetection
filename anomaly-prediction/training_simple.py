@@ -1,3 +1,4 @@
+import glob
 import json
 import logging
 import os
@@ -124,7 +125,8 @@ class MyTrainer:
                  optimizer: torch.optim.Optimizer,
                  scheduler: torch.optim.lr_scheduler,
                 es_patience: int,
-                es_min_delta: float,) -> None:
+                es_min_delta: float,
+                max_num_ckpts: int = -1) -> None:
         """
         Parameters:
         model: MEGNet model
@@ -138,6 +140,7 @@ class MyTrainer:
         if es_patience > 0 :
              self.early_stopper = EarlyStopper(es_patience,es_min_delta)
 
+        self.max_num_ckpts = max_num_ckpts
 
     def train(
         self,
@@ -181,18 +184,23 @@ class MyTrainer:
             )
 
             if loss < best_loss:
-                torch.save(
-                    {
-                        "epoch": epoch + 1,
-                        "model": self.model.state_dict(),
-                        "optimizer_state_dict": self.optimizer.state_dict(),
-                        "scheduler_state_dict": self.scheduler.state_dict(),
-                        "loss": loss,
-                        "acc": acc,
+                if self.max_num_ckpts !=0:
+                    torch.save(
+                        {
+                            "epoch": epoch + 1,
+                            "model": self.model.state_dict(),
+                            "optimizer_state_dict": self.optimizer.state_dict(),
+                            "scheduler_state_dict": self.scheduler.state_dict(),
+                            "loss": loss,
+                            "acc": acc,
 
-                    },
-                    checkpath + "/%05d" % (epoch + 1) + "-%6.5f" % (loss) + ".pt",
-                )
+                        },
+                        checkpath + "/%05d" % (epoch + 1) + "-%6.5f" % (loss) + ".pt",
+                    )
+                if self.max_num_ckpts > 0:
+                    ckpts = glob.glob(f'{checkpath}/*.pt')
+                    if len (ckpts) > self.max_num_ckpts:
+                        os.remove(sorted(ckpts,key=lambda x: os.stat(x).st_ctime)[0])
 
                 log_dict = {
                     "Epoch": epoch + 1,
